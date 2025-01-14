@@ -12,14 +12,24 @@ import logging
 import logging_loki
 from contextlib import redirect_stderr, redirect_stdout
 
-    
-import grpc
 
 import hello_pb2, hello_pb2_grpc
 from hello_service import GreeterServicer
 
+# ✅ Initialize Loki logging handler
+loki_handler = logging_loki.LokiHandler(
+    url="https://logs.cockpit.fr-par.scw.cloud/loki/api/v1/push",
+    tags={"job": "data_access_gRPC"},
+    auth=("8a1b326e-8a76-4ce3-a599-629bf0787c08", "4q1WRLlbWGTOMfzFFcP38ifNeKV2hyi9XWJytUMp9oxMxmMcQ1wff4nGyYZlFuXk"),
+    version="1",
+)
+
+# ✅ Main Python logger setup
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("gRPCServer")
+logger.addHandler(loki_handler)
+    
+import grpc
 
 def serve():
     try:
@@ -42,9 +52,18 @@ def serve():
         )
         reflection.enable_server_reflection(SERVICE_NAMES, server)
 
+        # Verify that the files are correctly filled with data
+        with open("./dataaccessdev.planifique.eu-key.pem", "r") as key_file:
+            key_data = key_file.read()
+            logger.debug(f"key_data: {key_data}")
+        with open("./dataaccessdev.planifique.eu-crt.pem", "r") as crt_file:
+            crt_data = crt_file.read()
+            logger.debug(f"crt_data: {crt_data}")
+
+        # Create server credentials
         server_credentials = grpc.ssl_server_credentials((
-                (open('./dataaccessdev.planifique.eu-key.pem', 'rb').read(), open('./dataaccessdev.planifique.eu-crt.pem', 'rb').read()),
-            ))
+            (open('./dataaccessdev.planifique.eu-key.pem', 'rb').read(), open('./dataaccessdev.planifique.eu-crt.pem', 'rb').read()),
+        ))
         logger.debug("Attempting to add secure port")
         server.add_secure_port("[::]:54329", server_credentials)
         logger.info("gRPC server running in production mode on HTTPS port 54329")
