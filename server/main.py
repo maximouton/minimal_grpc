@@ -65,8 +65,9 @@ def serve():
             (open('./dataaccessdev.planifique.eu-key.pem', 'rb').read(), open('./dataaccessdev.planifique.eu-crt.pem', 'rb').read()),
         ))
         logger.debug("Attempting to add secure port")
-        server.add_secure_port("[::]:54329", server_credentials)
-        logger.info("gRPC server running in production mode on HTTPS port 54329")
+        #server.add_secure_port("[::]:54329", server_credentials)
+        server.add_insecure_port("[::]:54329")
+        logger.info("gRPC server running in production mode on HTTP port 54329")
 
 
         # Graceful shutdown
