@@ -19,7 +19,7 @@ from hello_service import GreeterServicer
 # ✅ Initialize Loki logging handler
 loki_handler = logging_loki.LokiHandler(
     url="https://logs.cockpit.fr-par.scw.cloud/loki/api/v1/push",
-    tags={"job": "data_access_gRPC"},
+    tags={"job": "tes_minimal"},
     auth=("8a1b326e-8a76-4ce3-a599-629bf0787c08", "4q1WRLlbWGTOMfzFFcP38ifNeKV2hyi9XWJytUMp9oxMxmMcQ1wff4nGyYZlFuXk"),
     version="1",
 )

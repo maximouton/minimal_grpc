@@ -2,3 +2,4 @@ grpcio==1.68.0
 grpcio_reflection==1.68.0
 protobuf==5.29.2
 grpcio_tools==1.68.0
+python_logging_loki==0.3.1
