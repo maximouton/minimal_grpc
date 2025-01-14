@@ -1,0 +1,60 @@
+name: Deploy to Scaleway Serverless Container
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      # 1) Check out your repository code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 2) Set up Scaleway CLI
+      - name: Set up Scaleway CLI
+        uses: scaleway/action-scw@v0
+        with:
+            save-config: true
+            export-config: true
+            version: v2.24.0
+            access-key: ${{ secrets.SCW_ACCESS_KEY }}
+            secret-key: ${{ secrets.SCW_SECRET_KEY }}
+            default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+            default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }} 
+          
+
+      # 3) Log in to Scaleway Container Registry
+      - name: Log in to Scaleway Registry
+        run: |
+          echo "${{ secrets.SCW_SECRET_KEY }}" | docker login \
+            rg.${{ secrets.SCW_DEFAULT_REGION }}.scw.cloud \
+            -u "${{ secrets.SCW_ACCESS_KEY }}" --password-stdin
+
+      # 4) Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t rg.${{ secrets.SCW_DEFAULT_REGION }}.scw.cloud/${{ secrets.SCW_REGISTRY_NAMESPACE }}/planifique-data-service-dev:latest .
+
+      # 5) Push Docker image
+      - name: Push Docker image
+        run: |
+          docker push rg.${{ secrets.SCW_DEFAULT_REGION }}.scw.cloud/${{ secrets.SCW_REGISTRY_NAMESPACE }}/planifique-data-service-dev:latest
+
+      # 6) Deploy to Scaleway Serverless Container
+      - name: Deploy to Scaleway Serverless Container
+        run: |
+          # Attempt to update the container (if it exists)
+          set +e
+          scw container container update "${{ secrets.SCW_DATA_CONTAINER_ID }}" \
+            registry-image=rg.${{ secrets.SCW_DEFAULT_REGION }}.scw.cloud/${{ secrets.SCW_REGISTRY_NAMESPACE }}/planifique-data-service-dev:latest \
+            port=54329 \
+            min-scale=0 \
+            max-scale=1 \
+            memory-limit=128 \
+            region=${{ secrets.SCW_DEFAULT_REGION }} 
+          
+          set -e
+          
